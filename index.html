@@ -1,0 +1,682 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="AA-QAWF in Motion: animated pipeline and architecture diagrams for the board deck. Self-contained; open in any modern browser.">
+<title>AA-QAWF in Motion</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+  :root {
+    --bg: #F3F5F8;
+    --surface: #FFFFFF;
+    --stage: #FAFBFD;
+    --ink: #12203A;
+    --muted: #5B6B85;
+    --line: #C9D2E0;
+    --node: #E8EEF6;
+    --node-ink: #1E2F4E;
+    --accent: #F26B1D;
+    --accent-soft: rgba(242,107,29,.16);
+    --human: #0E8A7B;
+    --human-soft: rgba(14,138,123,.14);
+    --pass: #2E9E5B;
+    --pass-soft: rgba(46,158,91,.16);
+    --warn: #B8860B;
+    --fail: #D6453A;
+    --shadow: 0 1px 2px rgba(18,32,58,.06), 0 12px 32px rgba(18,32,58,.08);
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0B1424; --surface: #111D33; --stage: #0E1A2E; --ink: #E7EDF7; --muted: #93A3BD;
+      --line: #29405F; --node: #16253F; --node-ink: #DCE5F3; --accent: #FF7A2F; --accent-soft: rgba(255,122,47,.2);
+      --human: #3FC7B4; --human-soft: rgba(63,199,180,.18); --pass: #4CCB7A; --pass-soft: rgba(76,203,122,.2);
+      --warn: #E2B35A; --fail: #FF6B5E; --shadow: 0 1px 2px rgba(0,0,0,.4), 0 16px 40px rgba(0,0,0,.45); color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0B1424; --surface: #111D33; --stage: #0E1A2E; --ink: #E7EDF7; --muted: #93A3BD;
+    --line: #29405F; --node: #16253F; --node-ink: #DCE5F3; --accent: #FF7A2F; --accent-soft: rgba(255,122,47,.2);
+    --human: #3FC7B4; --human-soft: rgba(63,199,180,.18); --pass: #4CCB7A; --pass-soft: rgba(76,203,122,.2);
+    --warn: #E2B35A; --fail: #FF6B5E; --shadow: 0 1px 2px rgba(0,0,0,.4), 0 16px 40px rgba(0,0,0,.45); color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font-family: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif; font-size: 15px; line-height: 1.5;
+    padding-inline: clamp(16px, 4vw, 48px); padding-block: 28px 56px;
+  }
+  .wrap { max-width: 1240px; margin: 0 auto; display: grid; gap: 40px; }
+
+  header { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 16px 32px; }
+  header h1 {
+    font-family: "Bricolage Grotesque", "IBM Plex Sans", sans-serif; font-weight: 700; font-size: clamp(28px, 3.4vw, 40px);
+    line-height: 1.05; margin: 0; letter-spacing: -0.01em; text-wrap: balance;
+  }
+  header p { margin: 6px 0 0; color: var(--muted); max-width: 62ch; }
+  .toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; background: var(--surface); }
+  .seg button { border: 0; background: transparent; color: var(--muted); padding: 6px 12px; font: inherit; font-size: 13px; cursor: pointer; }
+  .seg button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+  .seg button:focus-visible, .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  figure { margin: 0; display: grid; gap: 14px; }
+  .fig-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 24px; }
+  .fig-head h2 {
+    font-family: "Bricolage Grotesque", "IBM Plex Sans", sans-serif; font-weight: 500; font-size: clamp(20px, 2.2vw, 26px);
+    margin: 0; letter-spacing: -0.005em;
+  }
+  .eyebrow { font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+  .controls { display: flex; gap: 8px; align-items: center; }
+  .btn {
+    border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 999px; padding: 6px 14px;
+    font: inherit; font-size: 13px; cursor: pointer; display: inline-flex; gap: 6px; align-items: center;
+  }
+  .btn:hover { border-color: var(--muted); }
+  .btn.primary { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+
+  .stage {
+    position: relative; background: var(--stage); border: 1px solid var(--line); border-radius: 16px; box-shadow: var(--shadow);
+    aspect-ratio: 16 / 9; overflow: hidden; display: grid; place-items: center; padding: 2.5%;
+  }
+  .stage:fullscreen { border: 0; border-radius: 0; padding: 4vh 4vw; background: var(--stage); }
+  .stage svg { width: 100%; height: auto; max-height: 100%; display: block; overflow: visible; }
+  .stage .fs-hint {
+    position: absolute; right: 14px; bottom: 12px; font-size: 12px; color: var(--muted); background: var(--surface);
+    border: 1px solid var(--line); border-radius: 999px; padding: 4px 10px; opacity: 0; pointer-events: none; transition: opacity .3s;
+  }
+  .stage:fullscreen .fs-hint { opacity: 1; }
+  .stage:fullscreen.idle .fs-hint { opacity: 0; }
+
+  figcaption { color: var(--muted); max-width: 72ch; }
+  figcaption strong { color: var(--ink); font-weight: 600; }
+
+  /* SVG shared */
+  svg { font-family: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif; color: var(--ink); }
+  .mono { font-family: "IBM Plex Mono", ui-monospace, monospace; }
+  .lbl { fill: var(--muted); font-size: 12px; }
+  .lbl-ink { fill: var(--ink); font-size: 12.5px; }
+    .node rect { fill: var(--node); stroke: var(--line); stroke-width: 1.5; transition: fill .4s, stroke .4s, filter .4s; }
+  .node .num { fill: var(--muted); font-size: 11px; transition: fill .4s; }
+  .node .name { fill: var(--node-ink); font-size: 14px; font-weight: 600; }
+  .node .sub { fill: var(--muted); font-size: 11.5px; }
+  .node.active rect { fill: var(--surface); stroke: var(--accent); stroke-width: 2.5; }
+  .node.active .num { fill: var(--accent); }
+  .node.done rect { stroke: var(--pass); fill: var(--pass-soft); }
+  .node.done .num { fill: var(--pass); }
+
+  .gate line { stroke: var(--human); stroke-width: 2; stroke-dasharray: 4 5; opacity: .55; transition: opacity .3s; }
+  .gate .person { fill: var(--human-soft); stroke: var(--human); stroke-width: 1.6; transition: fill .3s; }
+  .gate .cp { fill: var(--human); font-size: 11px; font-weight: 600; }
+  .gate .what { fill: var(--muted); font-size: 11px; }
+  .gate .stamp { fill: var(--pass); font-size: 11px; font-weight: 600; opacity: 0; transition: opacity .3s, transform .3s; transform: translateY(4px); }
+  .gate.active line { opacity: 1; }
+  .gate.active .person { fill: var(--human); }
+  .gate.active .halo { animation: halo 1.2s ease-out infinite; }
+  .gate.approved .stamp { opacity: 1; transform: translateY(0); }
+  .gate.approved .person { fill: var(--pass-soft); stroke: var(--pass); }
+  .halo { fill: none; stroke: var(--human); stroke-width: 2; opacity: 0; transform-box: fill-box; transform-origin: center; }
+  @keyframes halo { 0% { opacity: .8; transform: scale(.6);} 100% { opacity: 0; transform: scale(1.8);} }
+
+  .token { transition: transform .9s cubic-bezier(.4,.1,.2,1); }
+  .token circle { fill: var(--accent); stroke: var(--surface); stroke-width: 3; }
+  .token text { fill: #fff; font-size: 10px; font-weight: 600; letter-spacing: .04em; }
+  .token.merged circle { fill: var(--pass); }
+
+  .badge { opacity: 0; transition: opacity .4s, transform .4s; transform: translateY(6px); }
+  .badge.show { opacity: 1; transform: translateY(0); }
+  .badge rect { fill: var(--surface); stroke: var(--pass); stroke-width: 1.5; }
+  .badge text { fill: var(--pass); font-size: 12px; font-weight: 600; }
+  .badge.orange rect { stroke: var(--accent); }
+  .badge.orange text { fill: var(--accent); }
+
+  .loop path { fill: none; stroke: var(--accent); stroke-width: 2.2; stroke-dasharray: 6 5; opacity: .35; transition: opacity .3s; }
+  .loop.run path { opacity: 1; animation: dash 1.1s linear infinite; }
+  .loop text { fill: var(--muted); font-size: 11px; }
+  .loop.run text { fill: var(--accent); }
+  @keyframes dash { to { stroke-dashoffset: -22; } }
+
+  .no path { fill: none; stroke: var(--muted); stroke-width: 1.6; stroke-dasharray: 3 5; opacity: .7; }
+  .no text { fill: var(--muted); font-size: 11px; }
+
+  /* architecture figure */
+  .band .bg { fill: var(--node); stroke: var(--line); stroke-width: 1.5; transition: stroke .35s; }
+  .band.lit .bg { stroke: var(--accent); stroke-width: 2; }
+  .band.done .bg { stroke: var(--pass); stroke-width: 2; }
+  .band .title { fill: var(--node-ink); font-size: 16px; font-weight: 600; }
+  .band .subtitle { fill: var(--muted); font-size: 12px; }
+  .chip rect { fill: var(--surface); stroke: var(--line); stroke-width: 1.5; transition: stroke .3s, fill .3s; }
+  .chip text { fill: var(--ink); font-size: 12.5px; font-weight: 500; }
+  .chip.active rect { stroke: var(--accent); stroke-width: 2.5; }
+  .chip.done rect { stroke: var(--pass); fill: var(--pass-soft); }
+  .chip.hit rect { stroke: var(--human); stroke-width: 2.5; }
+  .lane .bg { fill: var(--surface); stroke: var(--line); stroke-width: 1.5; }
+  .lane .t { fill: var(--ink); font-size: 13px; font-weight: 600; }
+  .lane .d { fill: var(--muted); font-size: 11px; }
+  .bar { fill: var(--line); transition: fill .35s; }
+  .bar.pass { fill: var(--pass); }
+  .bar.fail { fill: var(--fail); }
+  .wire { fill: none; stroke: var(--line); stroke-width: 1.8; stroke-dasharray: 700; stroke-dashoffset: 700; transition: stroke-dashoffset 1s ease, stroke .3s; }
+  .wire.on { stroke-dashoffset: 0; stroke: var(--accent); }
+  .wire.static { stroke-dasharray: 4 5; stroke-dashoffset: 0; opacity: .7; }
+  .wlbl { fill: var(--muted); font-size: 11px; }
+  .wlbl.fade { opacity: 0; transition: opacity .3s; }
+  .wlbl.fade.on { opacity: 1; }
+  .wlbl.heal { fill: var(--fail); font-weight: 600; }
+  .pulse { opacity: 0; transition: transform .8s cubic-bezier(.4,.1,.2,1), opacity .25s; }
+  .pulse.show { opacity: 1; }
+  .pulse circle { fill: var(--human); stroke: var(--surface); stroke-width: 2; }
+  .pulse.res circle { fill: var(--pass); }
+  .pulse.fail circle { fill: var(--fail); }
+  .pulse.doc rect { fill: var(--surface); stroke: var(--accent); stroke-width: 1.8; }
+  .pulse.doc text { fill: var(--accent); font-size: 10.5px; font-weight: 600; }
+  .ledger rect { fill: var(--surface); stroke: var(--line); stroke-width: 1.5; transition: stroke .3s; }
+  .ledger .h { fill: var(--ink); font-size: 12.5px; font-weight: 600; }
+  .ledger .row { fill: var(--muted); font-size: 10.5px; opacity: 0; transition: opacity .4s; }
+  .ledger .row.on { opacity: 1; }
+  .ledger .row.good { fill: var(--pass); }
+  .ledger.lit rect { stroke: var(--accent); }
+  .lock path, .lock rect { stroke: var(--human); fill: none; stroke-width: 1.8; }
+  .lock text { fill: var(--human); font-size: 11px; font-weight: 600; }
+
+  .howto { border-top: 1px solid var(--line); padding-top: 24px; color: var(--muted); display: grid; gap: 8px; max-width: 78ch; }
+  .howto h3 { margin: 0; font-size: 14px; color: var(--ink); font-weight: 600; }
+  .howto ol { margin: 0; padding-left: 20px; }
+  .howto li + li { margin-top: 4px; }
+
+  /* solo mode: ?figure=pipeline|arch fills the viewport with one stage, no chrome */
+  html.solo, html.solo body { height: 100%; }
+  html.solo body { padding: 0; background: var(--stage); overflow: hidden; }
+  html.solo .wrap { max-width: none; height: 100%; gap: 0; display: block; }
+  html.solo header, html.solo .howto, html.solo .fig-head, html.solo figcaption, html.solo .fs-hint { display: none; }
+  html.solo figure { display: none; height: 100%; }
+  html.solo figure.solo-on { display: grid; place-items: center; }
+  html.solo .stage { width: 100%; height: 100%; aspect-ratio: auto; border: 0; border-radius: 0; box-shadow: none; padding: 3vmin 4vmin; }
+  html.solo .stage svg { max-height: 100%; width: auto; height: 100%; max-width: 100%; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .token, .bubble, .badge, .gate .stamp { transition: none; }
+    .gate.active .halo, .loop.run path { animation: none; }
+  }
+  @media (max-width: 640px) {
+    .stage { aspect-ratio: auto; padding: 8px; }
+    .stage svg { min-width: 720px; }
+    .stage { overflow-x: auto; display: block; }
+    .fig-head { flex-direction: column; align-items: flex-start; }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <div>
+      <h1>AA-QAWF in Motion</h1>
+      <p>Two animated figures for the board deck: one EPIC travelling through the eight phases and five human checkpoints, and the three-layer architecture: knowledge bank, orchestrator, execution. Embed this page in Gamma or record a stage with Present.</p>
+    </div>
+    <div class="toolbar" role="group" aria-label="Page settings">
+      <div class="seg" role="group" aria-label="Theme">
+        <button type="button" id="theme-system" data-theme-choice="system" aria-pressed="true">System</button>
+        <button type="button" id="theme-light" data-theme-choice="light" aria-pressed="false">Light</button>
+        <button type="button" id="theme-dark" data-theme-choice="dark" aria-pressed="false">Dark</button>
+      </div>
+      <div class="seg" role="group" aria-label="Playback">
+        <button type="button" id="loop-on" data-loop="1" aria-pressed="true">Loop</button>
+        <button type="button" id="loop-off" data-loop="0" aria-pressed="false">Play once</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- FIGURE 1: the pipeline -->
+  <figure id="fig-pipeline">
+    <div class="fig-head">
+      <div>
+        <div class="eyebrow">Figure 1 · How it works</div>
+        <h2>One EPIC in, a green suite out</h2>
+      </div>
+      <div class="controls">
+        <button type="button" class="btn" id="p-replay">Replay</button>
+        <button type="button" class="btn" id="p-pause" aria-pressed="false">Pause</button>
+        <button type="button" class="btn primary" id="p-present">Present</button>
+      </div>
+    </div>
+    <div class="stage" id="p-stage" tabindex="-1">
+      <svg viewBox="0 0 1440 500" role="img" aria-label="A Jira EPIC token moves left to right above eight pipeline phases. Five human checkpoints stand between phases after plan, design, generate, heal and regress. At the heal phase a repair loop runs. The run ends with tests in Xray, zero new failures and a merged change.">
+        <defs>
+          <marker id="arr-acc" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="var(--accent)"></path>
+          </marker>
+          <marker id="arr-mute" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="var(--muted)"></path>
+          </marker>
+        </defs>
+
+        <!-- input label, above the token's starting point -->
+        <text x="50" y="112" text-anchor="middle" class="lbl-ink" style="font-weight:600">Jira EPIC</text>
+        <text x="50" y="128" text-anchor="middle" class="lbl">the only input</text>
+        <line x1="50" y1="136" x2="50" y2="156" stroke="var(--muted)" stroke-width="1.6" marker-end="url(#arr-mute)"></line>
+        <circle cx="50" cy="180" r="17" fill="none" stroke="var(--accent)" stroke-width="1.6" stroke-dasharray="3 4" opacity=".7"></circle>
+        <text x="50" y="210" text-anchor="middle" class="lbl" style="font-size:10.5px">starts here</text>
+
+        <!-- phases -->
+        <g id="p-nodes"></g>
+
+        <!-- gates -->
+        <g id="p-gates"></g>
+
+        <!-- says-no branch under phase 1 -->
+        <g class="no">
+          <path d="M182,322 C182,352 160,362 120,362 C98,362 92,368 92,383" marker-end="url(#arr-mute)"></path>
+          <text x="40" y="396" class="lbl">Not ready? It stops here</text>
+          <text x="40" y="412" class="lbl">and says why on the ticket</text>
+        </g>
+
+        <!-- self-heal loop under phase 6 -->
+        <g class="loop" id="p-loop">
+          <path d="M988,322 C988,380 1058,392 1058,352 C1058,330 1040,322 1026,322" marker-end="url(#arr-acc)"></path>
+          <text x="1007" y="420" text-anchor="middle">a test breaks · diagnosed · repaired · re-run</text>
+          <text x="1007" y="436" text-anchor="middle">a real defect becomes a Jira bug</text>
+        </g>
+
+        <!-- output badges: outer g carries position, inner g carries the animated class -->
+        <g transform="translate(621,340)"><g class="badge orange" id="b-xray">
+          <rect x="0" y="0" width="112" height="28" rx="14"></rect>
+          <text x="56" y="18" text-anchor="middle">Tests in Xray</text>
+        </g></g>
+        <g transform="translate(1111,340)"><g class="badge" id="b-zero">
+          <rect x="0" y="0" width="122" height="28" rx="14"></rect>
+          <text x="61" y="18" text-anchor="middle">0 new failures</text>
+        </g></g>
+        <g transform="translate(1294,340)"><g class="badge" id="b-merged">
+          <rect x="0" y="0" width="86" height="28" rx="14"></rect>
+          <text x="43" y="18" text-anchor="middle">Merged</text>
+        </g></g>
+
+        <!-- token -->
+        <g class="token" id="p-token" style="transform: translate(50px, 180px)">
+          <circle r="17"></circle>
+          <text y="3.5" text-anchor="middle">EPIC</text>
+        </g>
+
+        <!-- legend -->
+        <g transform="translate(40,478)">
+          <circle cx="7" cy="0" r="6" fill="var(--accent)"></circle><text x="20" y="4" class="lbl">the EPIC moving through</text>
+          <g transform="translate(210,0)"><circle cx="7" cy="0" r="6" fill="var(--human)"></circle><text x="20" y="4" class="lbl">a person approves</text></g>
+          <g transform="translate(380,0)"><rect x="0" y="-7" width="14" height="14" rx="3" fill="var(--pass-soft)" stroke="var(--pass)"></rect><text x="20" y="4" class="lbl">done</text></g>
+        </g>
+      </svg>
+      <div class="fs-hint">Esc to leave · R replays · Space pauses</div>
+    </div>
+    <figcaption><strong>The mechanism in one pass.</strong> The pipeline never publishes or merges without a person at one of the five gates. At the heal phase it repairs its own tests and files a bug only when the failure is real. If the EPIC is not ready, it stops at phase one and explains why on the ticket.</figcaption>
+  </figure>
+
+  <!-- FIGURE 2: the architecture -->
+  <figure id="fig-arch">
+    <div class="fig-head">
+      <div>
+        <div class="eyebrow">Figure 2 · The architecture</div>
+        <h2>Three layers, one contract</h2>
+      </div>
+      <div class="controls">
+        <button type="button" class="btn" id="k-replay">Replay</button>
+        <button type="button" class="btn" id="k-pause" aria-pressed="false">Pause</button>
+        <button type="button" class="btn primary" id="k-present">Present</button>
+      </div>
+    </div>
+    <div class="stage" id="k-stage" tabindex="-1">
+      <svg viewBox="0 0 1000 560" role="img" aria-label="Three horizontal layers. Top: the knowledge bank, read only, with core briefing, distilled notes and live Confluence. Middle: the orchestrator, six agents from scope to review and a state log per EPIC. Bottom: execution, a web lane and a desktop lane. An EPIC enters the orchestrator, agents consult the knowledge bank, one test-case file fans out to both lanes, tests turn green, one failure returns to the healer and the fix goes back down, then both lanes report in one result format and the state log reads merged.">
+        <defs>
+          <marker id="arr3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="var(--accent)"></path>
+          </marker>
+        </defs>
+
+        <!-- Band 1: knowledge bank -->
+        <g class="band" id="band-k">
+          <rect class="bg" x="40" y="36" width="920" height="104" rx="14"></rect>
+          <text x="62" y="66" class="title">Knowledge bank</text>
+          <text x="62" y="84" class="subtitle">what the product is, per customer</text>
+          <g class="lock" transform="translate(62,98)">
+            <rect x="0" y="9" width="18" height="13" rx="2.5"></rect>
+            <path d="M3.5,9 V6 a5.5,5.5 0 0 1 11,0 V9"></path>
+            <text x="26" y="21">read only, never written to</text>
+          </g>
+          <g class="chip" id="k-core"><rect x="330" y="96" width="130" height="30" rx="15"></rect><text x="395" y="116" text-anchor="middle">Core briefing</text></g>
+          <g class="chip" id="k-notes"><rect x="480" y="96" width="150" height="30" rx="15"></rect><text x="555" y="116" text-anchor="middle">Distilled notes</text></g>
+          <g class="chip" id="k-conf"><rect x="650" y="96" width="150" height="30" rx="15"></rect><text x="725" y="116" text-anchor="middle">Live Confluence</text></g>
+        </g>
+
+        <!-- gap K/O -->
+        <line class="wire static" x1="555" y1="140" x2="555" y2="184"></line>
+        <text x="568" y="166" class="wlbl">agents ask, the bank answers with its source</text>
+
+        <!-- Band 2: orchestrator -->
+        <g class="band" id="band-o">
+          <rect class="bg" x="40" y="184" width="920" height="150" rx="14"></rect>
+          <text x="62" y="214" class="title">Orchestrator</text>
+          <text x="62" y="232" class="subtitle">the Claude Code plugin: agents, five human checkpoints, a resumable state log per EPIC</text>
+          <g id="o-chips"></g>
+          <text x="562" y="320" text-anchor="middle" class="wlbl heal fade" id="heal-lbl">a failure comes up, the fix goes down</text>
+          <g class="ledger" id="ledger" transform="translate(740,242)">
+            <rect x="0" y="0" width="210" height="82" rx="10"></rect>
+            <text x="12" y="20" class="h">EPIC state log</text>
+            <text x="12" y="38" class="row mono" id="lg1">CP1 · plan approved</text>
+            <text x="12" y="52" class="row mono" id="lg2">CP2 · tests in Xray</text>
+            <text x="12" y="66" class="row mono" id="lg3">CP3 · CP4 · 1 repaired</text>
+            <text x="12" y="80" class="row mono good" id="lg4">CP5 · merged</text>
+          </g>
+        </g>
+
+        <!-- contract wires O -> E -->
+        <path class="wire" id="w-web" d="M500,356 C500,400 275,396 275,440" marker-end="url(#arr3)"></path>
+        <path class="wire" id="w-desk" d="M500,356 C500,400 725,396 725,440" marker-end="url(#arr3)"></path>
+
+        <!-- Band 3: execution -->
+        <g class="band" id="band-e">
+          <rect class="bg" x="40" y="378" width="920" height="150" rx="14"></rect>
+          <text x="62" y="408" class="title">Execution</text>
+          <text x="62" y="426" class="subtitle">two test lanes, one method, one result format</text>
+          <g class="lane" id="lane-web">
+            <rect class="bg" x="60" y="440" width="430" height="74" rx="10"></rect>
+            <text x="76" y="462" class="t">Web lane</text>
+            <text x="150" y="462" class="d">Playwright on the R5 web UI</text>
+            <g id="bars-web"></g>
+          </g>
+          <g class="lane" id="lane-desk">
+            <rect class="bg" x="510" y="440" width="430" height="74" rx="10"></rect>
+            <text x="526" y="462" class="t">Desktop lane</text>
+            <text x="634" y="462" class="d">AssertJ-Swing on the R4 desktop client</text>
+            <g id="bars-desk"></g>
+          </g>
+        </g>
+
+        <text x="500" y="431" text-anchor="middle" class="wlbl fade" id="contract-lbl">one test-case file per EPIC, both lanes read the same file</text>
+
+        <!-- pulses -->
+        <g class="pulse" id="pq" style="transform: translate(146px, 272px)"><circle r="7"></circle></g>
+        <g class="pulse doc" id="pdoc" style="transform: translate(335px, 300px)">
+          <rect x="-70" y="-12" width="140" height="24" rx="6"></rect>
+          <text y="4" text-anchor="middle">test cases · one file</text>
+        </g>
+        <g class="pulse fail" id="pfail" style="transform: translate(766px, 486px)"><circle r="7"></circle></g>
+        <g class="pulse res" id="pfix" style="transform: translate(562px, 288px)"><circle r="7"></circle></g>
+        <g class="pulse res" id="pr1" style="transform: translate(246px, 486px)"><circle r="7"></circle></g>
+        <g class="pulse res" id="pr2" style="transform: translate(666px, 486px)"><circle r="7"></circle></g>
+
+        <!-- the EPIC token -->
+        <g class="token" id="k-token" style="transform: translate(-30px, 272px)">
+          <circle r="15"></circle>
+          <text y="3.5" text-anchor="middle">EPIC</text>
+        </g>
+
+        <!-- legend -->
+        <g transform="translate(40,548)">
+          <circle cx="7" cy="0" r="6" fill="var(--accent)"></circle><text x="20" y="4" class="lbl">the EPIC</text>
+          <g transform="translate(110,0)"><circle cx="7" cy="0" r="6" fill="var(--human)"></circle><text x="20" y="4" class="lbl">a question to the knowledge bank</text></g>
+          <g transform="translate(360,0)"><rect x="0" y="-6" width="18" height="12" rx="2" fill="var(--pass)"></rect><text x="24" y="4" class="lbl">test passing</text></g>
+          <g transform="translate(480,0)"><rect x="0" y="-6" width="18" height="12" rx="2" fill="var(--fail)"></rect><text x="24" y="4" class="lbl">test failing</text></g>
+        </g>
+      </svg>
+      <div class="fs-hint">Esc to leave · R replays · Space pauses</div>
+    </div>
+    <figcaption><strong>Three layers, one contract.</strong> The knowledge bank on top is read only. The orchestrator in the middle runs the agents, stops at five human checkpoints and keeps a resumable state log per EPIC. Execution at the bottom drives two very different user interfaces from one test-case file and reports back in one result format, so a failure comes up to the healer and the fix goes back down.</figcaption>
+  </figure>
+
+  <section class="howto">
+    <h3>Using these in Gamma</h3>
+    <ol>
+      <li>Embed: add a web embed block in Gamma and paste this page's link. Add <code>?figure=pipeline</code> or <code>?figure=arch</code> to show one figure filling the frame, and <code>&amp;theme=dark</code> or <code>&amp;theme=light</code> to match the deck.</li>
+      <li>Record: press Present on a figure, wait for the controls to fade, record the screen, then trim to one loop. Upload the clip as the card's video.</li>
+      <li>Still: pause at the frame you want and screenshot. Pick Light or Dark to match the deck.</li>
+    </ol>
+  </section>
+</div>
+
+<script>
+(function () {
+  const root = document.documentElement;
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const params = new URLSearchParams(location.search);
+  const soloFigure = params.get('figure');
+  let loop = params.get('once') !== '1';
+  if (soloFigure === 'pipeline' || soloFigure === 'arch') {
+    root.classList.add('solo');
+    document.getElementById(soloFigure === 'pipeline' ? 'fig-pipeline' : 'fig-arch').classList.add('solo-on');
+  }
+
+  /* theme */
+  let saved = null;
+  try { saved = localStorage.getItem('aaqawf-motion-theme'); } catch (e) {}
+  function setTheme(choice) {
+    if (choice === 'system') root.removeAttribute('data-theme'); else root.setAttribute('data-theme', choice);
+    document.querySelectorAll('[data-theme-choice]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.themeChoice === choice)));
+    try { localStorage.setItem('aaqawf-motion-theme', choice); } catch (e) {}
+  }
+  if (saved === 'light' || saved === 'dark') setTheme(saved);
+  const themeParam = params.get('theme');
+  if (themeParam === 'light' || themeParam === 'dark') { if (themeParam === 'system') root.removeAttribute('data-theme'); else root.setAttribute('data-theme', themeParam); }
+  document.querySelectorAll('[data-theme-choice]').forEach(b => b.addEventListener('click', () => setTheme(b.dataset.themeChoice)));
+  document.querySelectorAll('[data-loop]').forEach(b => b.addEventListener('click', () => {
+    loop = b.dataset.loop === '1';
+    document.querySelectorAll('[data-loop]').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+  }));
+
+  /* tiny timeline engine */
+  function Timeline(steps, total, onReset) {
+    let start = 0, elapsed = 0, raf = 0, playing = false, fired = new Set(), endTimer = 0;
+    function tick(now) {
+      elapsed = now - start;
+      steps.forEach((s, i) => { if (!fired.has(i) && elapsed >= s.t) { fired.add(i); s.fn(); } });
+      if (elapsed >= total) { playing = false; if (loop) endTimer = setTimeout(api.replay, 2800); return; }
+      raf = requestAnimationFrame(tick);
+    }
+    const api = {
+      replay() {
+        clearTimeout(endTimer); cancelAnimationFrame(raf); fired.clear(); onReset();
+        if (reduced) { steps.forEach(s => s.fn()); playing = false; return; }
+        elapsed = 0; start = performance.now(); playing = true; raf = requestAnimationFrame(tick);
+      },
+      pause() { if (!playing) return false; playing = false; cancelAnimationFrame(raf); clearTimeout(endTimer); return true; },
+      resume() { if (playing || elapsed >= total) return; playing = true; start = performance.now() - elapsed; raf = requestAnimationFrame(tick); },
+      get playing() { return playing; },
+      get total() { return total; }
+    };
+    return api;
+  }
+
+  function wireControls(prefix, tl, stage) {
+    const pause = document.getElementById(prefix + '-pause');
+    document.getElementById(prefix + '-replay').addEventListener('click', () => { tl.replay(); pause.textContent = 'Pause'; pause.setAttribute('aria-pressed', 'false'); });
+    pause.addEventListener('click', () => togglePause());
+    function togglePause() {
+      if (tl.playing) { tl.pause(); pause.textContent = 'Play'; pause.setAttribute('aria-pressed', 'true'); }
+      else { tl.resume(); pause.textContent = 'Pause'; pause.setAttribute('aria-pressed', 'false'); }
+    }
+    document.getElementById(prefix + '-present').addEventListener('click', () => {
+      if (stage.requestFullscreen) stage.requestFullscreen().then(() => { stage.focus(); tl.replay(); }).catch(() => {});
+    });
+    let idle = 0;
+    stage.addEventListener('mousemove', () => { stage.classList.remove('idle'); clearTimeout(idle); idle = setTimeout(() => stage.classList.add('idle'), 2000); });
+    stage.addEventListener('keydown', (e) => {
+      if (e.key === 'r' || e.key === 'R') { tl.replay(); }
+      if (e.key === ' ') { e.preventDefault(); togglePause(); }
+    });
+  }
+
+  /* ---------- Figure 1: pipeline ---------- */
+  const phases = [
+    ['1', 'Scope', 'reads the EPIC,', 'scores confidence'],
+    ['2', 'Plan', 'coverage', 'per UI'],
+    ['3', 'Design', 'step-by-step', 'test cases'],
+    ['4', 'Publish', 'into Xray,', 'linked to the EPIC'],
+    ['5', 'Generate', 'inspects live,', 'writes the tests'],
+    ['6', 'Heal', 'repairs, or', 'files a bug'],
+    ['7', 'Regress', 'zero new', 'failures allowed'],
+    ['8', 'Review', 'merge request', 'reviewed']
+  ];
+  const X0 = 120, W = 124, GAP = 41, STEP = W + GAP, TOP = 210, H = 112, TOKEN_Y = 180;
+  const nodesG = document.getElementById('p-nodes');
+  phases.forEach((p, i) => {
+    const x = X0 + i * STEP;
+    const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    g.setAttribute('class', 'node'); g.id = 'N' + (i + 1);
+    g.innerHTML =
+      `<rect x="${x}" y="${TOP}" width="${W}" height="${H}" rx="12"></rect>` +
+      `<text x="${x + 14}" y="${TOP + 26}" class="num mono">0${p[0]}</text>` +
+      `<text x="${x + 14}" y="${TOP + 54}" class="name">${p[1]}</text>` +
+      `<text x="${x + 14}" y="${TOP + 76}" class="sub">${p[2]}</text>` +
+      `<text x="${x + 14}" y="${TOP + 93}" class="sub">${p[3]}</text>`;
+    nodesG.appendChild(g);
+  });
+  // gates after phases 2,3,5,6,7  -> CP1..CP5
+  const gateAfter = [[2, 'scope and plan'], [3, 'the test cases'], [5, 'the generated code'], [6, 'first-run results'], [7, 'the merge']];
+  const PERSON_Y = 104;
+  const gatesG = document.getElementById('p-gates');
+  const gateX = [];
+  gateAfter.forEach((gd, k) => {
+    const i = gd[0] - 1;
+    const x = X0 + i * STEP + W + GAP / 2;
+    gateX.push(x);
+    const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    g.setAttribute('class', 'gate'); g.id = 'G' + (k + 1);
+    g.innerHTML =
+      `<line x1="${x}" y1="${TOP + 8}" x2="${x}" y2="${TOP + H - 8}"></line>` +
+      `<circle class="halo" cx="${x}" cy="${PERSON_Y + 10}" r="16"></circle>` +
+      `<circle class="person" cx="${x}" cy="${PERSON_Y}" r="6.5"></circle>` +
+      `<path class="person" d="M${x - 11},${PERSON_Y + 22} a11,11 0 0 1 22,0 z"></path>` +
+      `<text x="${x}" y="${PERSON_Y - 20}" text-anchor="middle" class="cp mono">CP${k + 1}</text>` +
+      `<text x="${x}" y="${PERSON_Y - 50}" text-anchor="middle" class="what">approves</text>` +
+      `<text x="${x}" y="${PERSON_Y - 36}" text-anchor="middle" class="what">${gd[1]}</text>` +
+      `<text x="${x}" y="${PERSON_Y + 44}" text-anchor="middle" class="stamp">approved</text>`;
+    gatesG.appendChild(g);
+  });
+
+  const token = document.getElementById('p-token');
+  const nodeCenter = i => X0 + (i - 1) * STEP + W / 2;
+  function moveTo(x) { token.style.transform = `translate(${x}px, ${TOKEN_Y}px)`; }
+  function activate(i) { for (let k = 1; k <= 8; k++) { const n = document.getElementById('N' + k); n.classList.toggle('active', k === i); if (k < i) n.classList.add('done'); } }
+  function gate(k, state) { const g = document.getElementById('G' + k); g.classList.remove('active', 'approved'); if (state) g.classList.add(state); }
+  function resetPipeline() {
+    token.classList.remove('merged'); moveTo(50);
+    for (let k = 1; k <= 8; k++) document.getElementById('N' + k).classList.remove('active', 'done');
+    for (let k = 1; k <= 5; k++) gate(k, null);
+    document.getElementById('p-loop').classList.remove('run');
+    ['b-xray', 'b-zero', 'b-merged'].forEach(id => document.getElementById(id).classList.remove('show'));
+  }
+  const P = [];
+  let t = 500;
+  const goPhase = (i) => { P.push({ t, fn: () => { moveTo(nodeCenter(i)); activate(i); } }); t += 1200; };
+  const goGate = (k) => { P.push({ t, fn: () => { moveTo(gateX[k - 1]); gate(k, 'active'); } }); t += 1000; P.push({ t, fn: () => gate(k, 'approved') }); t += 700; };
+  goPhase(1); goPhase(2); goGate(1); goPhase(3); goGate(2);
+  goPhase(4); P.push({ t: t - 400, fn: () => document.getElementById('b-xray').classList.add('show') });
+  goPhase(5); goGate(3);
+  goPhase(6); P.push({ t: t - 800, fn: () => document.getElementById('p-loop').classList.add('run') }); t += 1800; P.push({ t, fn: () => document.getElementById('p-loop').classList.remove('run') });
+  goGate(4);
+  goPhase(7); P.push({ t: t - 400, fn: () => document.getElementById('b-zero').classList.add('show') });
+  goGate(5);
+  goPhase(8);
+  P.push({ t, fn: () => { document.getElementById('b-merged').classList.add('show'); token.classList.add('merged'); for (let k = 1; k <= 8; k++) { const n = document.getElementById('N' + k); n.classList.remove('active'); n.classList.add('done'); } } });
+  const pipelineTL = Timeline(P, t + 1200, resetPipeline);
+  wireControls('p', pipelineTL, document.getElementById('p-stage'));
+
+  /* ---------- Figure 2: architecture ---------- */
+  const agentsDef = ['Scope', 'Plan', 'Design', 'Automate', 'Heal', 'Review'];
+  const chipsG = document.getElementById('o-chips');
+  agentsDef.forEach((name, i) => {
+    const x = 100 + i * 104;
+    const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    g.setAttribute('class', 'chip'); g.id = 'c' + i;
+    g.innerHTML = `<rect x="${x}" y="256" width="92" height="32" rx="16"></rect><text x="${x + 46}" y="277" text-anchor="middle">${name}</text>`;
+    chipsG.appendChild(g);
+  });
+  const chipC = i => ({ x: 100 + i * 104 + 46, y: 272 });
+  const HEAL = chipC(4), REVIEW = chipC(5);
+  function makeBars(gid, x0, prefix) {
+    const g = document.getElementById(gid);
+    for (let i = 0; i < 5; i++) {
+      const r = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      r.setAttribute('class', 'bar'); r.id = prefix + i;
+      r.setAttribute('x', String(x0 + i * 70)); r.setAttribute('y', '482'); r.setAttribute('width', '60'); r.setAttribute('height', '18'); r.setAttribute('rx', '4');
+      g.appendChild(r);
+    }
+  }
+  makeBars('bars-web', 76, 'bw'); makeBars('bars-desk', 526, 'bd');
+
+  const kchips = ['k-core', 'k-notes', 'k-conf'].map(id => document.getElementById(id));
+  const kpos = [{ x: 395, y: 128 }, { x: 555, y: 128 }, { x: 725, y: 128 }];
+  const ktoken = document.getElementById('k-token');
+  const pq = document.getElementById('pq'), pdoc = document.getElementById('pdoc'), pfail = document.getElementById('pfail'), pfix = document.getElementById('pfix'), pr1 = document.getElementById('pr1'), pr2 = document.getElementById('pr2');
+  const bandO = document.getElementById('band-o'), bandK = document.getElementById('band-k'), bandE = document.getElementById('band-e');
+  const ledger = document.getElementById('ledger');
+  const tr = (el, x, y) => { el.style.transform = `translate(${x}px, ${y}px)`; };
+  const snap = (el, x, y) => { el.style.transition = 'none'; el.style.transform = `translate(${x}px, ${y}px)`; void el.getBoundingClientRect(); el.style.transition = ''; };
+  const chip = (i, state) => { const c = document.getElementById('c' + i); c.classList.remove('active'); if (state) c.classList.add(state); };
+  const bar = (id, state) => { const b = document.getElementById(id); b.classList.remove('pass', 'fail'); if (state) b.classList.add(state); };
+
+  function resetArch() {
+    for (let i = 0; i < 6; i++) document.getElementById('c' + i).classList.remove('active', 'done');
+    kchips.forEach(c => c.classList.remove('hit'));
+    [bandO, bandK, bandE].forEach(b => b.classList.remove('lit', 'done'));
+    ledger.classList.remove('lit');
+    ['lg1', 'lg2', 'lg3', 'lg4'].forEach(id => document.getElementById(id).classList.remove('on'));
+    ['w-web', 'w-desk'].forEach(id => document.getElementById(id).classList.remove('on'));
+    ['contract-lbl', 'heal-lbl'].forEach(id => document.getElementById(id).classList.remove('on'));
+    for (let i = 0; i < 5; i++) { bar('bw' + i, null); bar('bd' + i, null); }
+    [pq, pdoc, pfail, pfix, pr1, pr2].forEach(p => p.classList.remove('show'));
+    snap(pq, 146, 272); snap(pdoc, 335, 300); snap(pfail, 766, 486); snap(pfix, HEAL.x, 288); snap(pr1, 246, 486); snap(pr2, 666, 486);
+    ktoken.classList.remove('merged'); snap(ktoken, -30, 272);
+  }
+
+  const K = [];
+  let k = 300;
+  const at = (dt, fn) => { K.push({ t: k, fn }); k += dt; };
+  function ask(agentIdx, kIdx) {
+    const c = chipC(agentIdx);
+    at(150, () => { snap(pq, c.x, c.y); pq.classList.add('show'); bandK.classList.add('lit'); });
+    at(850, () => { tr(pq, kpos[kIdx].x, kpos[kIdx].y); });
+    at(500, () => { kchips[kIdx].classList.add('hit'); });
+    at(800, () => { tr(pq, c.x, c.y); });
+    at(500, () => { pq.classList.remove('show'); kchips[kIdx].classList.remove('hit'); bandK.classList.remove('lit'); });
+  }
+  at(700, () => { tr(ktoken, 64, 272); bandO.classList.add('lit'); ledger.classList.add('lit'); });
+  at(200, () => chip(0, 'active'));
+  ask(0, 1);
+  at(300, () => { chip(0, 'done'); chip(1, 'active'); });
+  at(900, () => { document.getElementById('lg1').classList.add('on'); });
+  at(500, () => { chip(1, 'done'); chip(2, 'active'); });
+  ask(2, 2);
+  at(300, () => { chip(2, 'done'); document.getElementById('lg2').classList.add('on'); });
+  at(400, () => { pdoc.classList.add('show'); });
+  at(200, () => { tr(pdoc, 500, 356); });
+  at(900, () => { document.getElementById('w-web').classList.add('on'); document.getElementById('w-desk').classList.add('on'); document.getElementById('contract-lbl').classList.add('on'); bandE.classList.add('lit'); });
+  at(900, () => { chip(3, 'active'); });
+  ask(3, 1);
+  const order = ['bw0', 'bd0', 'bw1', 'bd1', 'bw2', 'bd2', 'bw3', 'bd3', 'bw4', 'bd4'];
+  order.forEach((id) => at(380, () => bar(id, id === 'bd3' ? 'fail' : 'pass')));
+  at(400, () => { pfail.classList.add('show'); });
+  at(150, () => { tr(pfail, HEAL.x, 288); });
+  at(900, () => { pfail.classList.remove('show'); chip(3, 'done'); chip(4, 'active'); document.getElementById('heal-lbl').classList.add('on'); });
+  at(700, () => { snap(pfix, HEAL.x, 288); pfix.classList.add('show'); });
+  at(150, () => { tr(pfix, 766, 486); });
+  at(900, () => { pfix.classList.remove('show'); bar('bd3', 'pass'); });
+  at(500, () => { chip(4, 'done'); document.getElementById('lg3').classList.add('on'); document.getElementById('heal-lbl').classList.remove('on'); });
+  at(500, () => { pr1.classList.add('show'); pr2.classList.add('show'); });
+  at(150, () => { tr(pr1, REVIEW.x, 272); tr(pr2, REVIEW.x, 272); });
+  at(900, () => { pr1.classList.remove('show'); pr2.classList.remove('show'); chip(5, 'active'); });
+  at(1100, () => { chip(5, 'done'); document.getElementById('lg4').classList.add('on'); ktoken.classList.add('merged'); [bandO, bandE].forEach(b => { b.classList.remove('lit'); b.classList.add('done'); }); ledger.classList.remove('lit'); });
+  const knowledgeTL = Timeline(K, k + 1800, resetArch);
+  wireControls('k', knowledgeTL, document.getElementById('k-stage'));
+
+  /* start */
+  window.__aaqawf = { pipelineMs: pipelineTL.total, archMs: knowledgeTL.total, replay: (f) => (f === 'arch' ? knowledgeTL : pipelineTL).replay() };
+  if (soloFigure === 'pipeline') pipelineTL.replay();
+  else if (soloFigure === 'arch') knowledgeTL.replay();
+  else { pipelineTL.replay(); knowledgeTL.replay(); }
+})();
+</script>
+</body>
+</html>
